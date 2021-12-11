@@ -34,11 +34,11 @@ def graphe_outliers(df_out, column, q_min, q_max):
         q_min ([type]): [description]
         q_max ([type]): [description]
     """
-    figure, axes = plt.subplots(1,3)
+    figure, axes = plt.subplots(1,2)
     # Avant traitement des outliers
     # Boite à moustaches
-    sns.boxplot(data=df_out[column],x=df_out[column], ax=axes[0])
-    df_out.boxplot(column=[column], grid=True, ax=axes[1])
+    #sns.boxplot(data=df_out[column],x=df_out[column], ax=axes[0])
+    df_out.boxplot(column=[column], grid=True, ax=axes[0])
     # scatter
     df_only_ok = df_out[(df_out[column]>=q_min) & (df_out[column]<=q_max)]
     df_only_ouliers = df_out[(df_out[column]<q_min) | (df_out[column]>q_max)]
