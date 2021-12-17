@@ -1,5 +1,89 @@
+import matplotlib.axes as axes
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
+from matplotlib.ticker import FuncFormatter
+
+PLOT_FIGURE_BAGROUNG_COLOR = 'white'
+PLOT_BAGROUNG_COLOR = PLOT_FIGURE_BAGROUNG_COLOR
+
+def category_prix(prix):
+    """Retourne la catégorie en fonction du prix
+    Args:
+        prix (int)
+    Returns:
+        [String]: La catégorie
+    """
+    if 0 <= prix < 10:
+        return "< 10 €"
+    elif 10 <= prix < 25:
+        return 'de 10 à 25 €'
+    elif 25 <= prix < 100:
+        pas = 25
+        for i in range(25, 100, pas):
+            if i <= prix < i+pas:
+                return f'de {i} à {i+pas} €'
+    elif 100 <= prix < 300:
+        pas = 50
+        for i in range(100, 300, pas):
+            if i <= prix < i+pas:
+                return f'de {i} à {i+pas} €'
+    elif prix >= 300:
+        return '>= 300 €'
+    else:
+        return np.nan
+
+def create_sorter_prix():
+    sorter = []
+    for i in range (1,550,10):
+        age = category_prix(i)
+        if age not in sorter:
+            sorter.append(age)
+    return sorter
+
+def category_age(annee):
+    age = 2021  - annee
+    if 0 <= age < 10:
+        return '<10 ans'
+    elif 10 <= age < 80:
+        pas = 10
+        for i in range(10, 80, pas):
+            if i <= age < i+pas:
+                return f'de {i} à {i+pas} ans'
+    elif 80 <= age <= 120:
+        return '+80 ans'
+    else:
+        return np.nan
+
+def create_sorter_age():
+    sorter = []
+    start= 2021-1
+    end = 2021-85
+    for i in range (start,end,-10):
+        age = category_age(i)
+        if age not in sorter:
+            sorter.append(age)
+    return sorter
+
+
+
+# ----------------------------------------------------------------------------------
+#                        GRAPHIQUES
+# ----------------------------------------------------------------------------------
+def color_graph_background(ligne=1, colonne=1):
+    figure, axes = plt.subplots(ligne,colonne)
+    figure.patch.set_facecolor(PLOT_FIGURE_BAGROUNG_COLOR)
+    if isinstance(axes, np.ndarray):
+        for axe in axes:
+            # Traitement des figures avec plusieurs lignes
+            if isinstance(axe, np.ndarray):
+                for ae in axe:
+                    ae.set_facecolor(PLOT_BAGROUNG_COLOR)
+            else:
+                axe.set_facecolor(PLOT_BAGROUNG_COLOR)
+    else:
+        axes.set_facecolor(PLOT_BAGROUNG_COLOR)
+    return figure, axes
 
 
 def get_outliers_datas(df, colname):
@@ -34,7 +118,8 @@ def graphe_outliers(df_out, column, q_min, q_max):
         q_min ([type]): [description]
         q_max ([type]): [description]
     """
-    figure, axes = plt.subplots(1,2)
+    
+    figure, axes = color_graph_background(1,2)
     # Avant traitement des outliers
     # Boite à moustaches
     #sns.boxplot(data=df_out[column],x=df_out[column], ax=axes[0])
@@ -49,3 +134,163 @@ def graphe_outliers(df_out, column, q_min, q_max):
     figure.set_dpi(100)
     figure.suptitle("NUTRISCORE - "+column, fontsize=16)
     plt.show()
+
+def draw_pie_multiple_by_value(df, column_name, values, compare_column_names, titre="", legend=True, verbose=False, max_col = 4 , colors=None):
+    """ Fonction pour dessiner un graphe pie pour la colonne reçue
+
+    Args:
+        df (DataFrame): Données à représenter
+        column_name (String): colonne à représenter
+        country_name_list (list[String], optional): Liste des pays à traiter. Defaults to [].
+        verbose (bool, optional): Mode debug. Defaults to False.
+    """
+    nb_col = len(values)
+    nb_row = 1
+    if nb_col > max_col:
+        more = 1
+        if (nb_col % max_col) == 0:
+            more = 0
+        nb_row = (nb_col//max_col) + more
+        nb_col = max_col
+
+    figure, axes = color_graph_background(nb_row,nb_col)
+    i = 0
+    j = 0
+    for val in values:
+        ax = axes
+        if nb_row == 1:
+            ax = axes[i]
+            i += 1
+        else:
+            ax = axes[i][j]
+            j += 1
+            if j == nb_col:
+                i += 1
+                j = 0
+        _draw_pie(df[df[column_name]==val], compare_column_names, ax, colors=colors, legend=legend, verbose=verbose)
+        ax.set_title(column_name+"="+str(val))
+        ax.set_facecolor(PLOT_BAGROUNG_COLOR)   
+        
+    figure.set_size_inches(15, 5*nb_row, forward=True)
+    figure.set_dpi(100)
+    figure.suptitle(titre, fontsize=16)
+    plt.show()
+    print("draw_pie_multiple_by_value", column_name," ................................................. END")
+
+
+def draw_pie_multiple(df, column_names, colors=None, verbose=False, legend=True):
+    """Fonction pour dessiner un graphe pie pour la colonne reçue
+
+    Args:
+        df (DataFrame): Données à représenter
+        column_name (String): colonne à représenter
+        country_name_list (list[String], optional): Liste des pays à traiter. Defaults to [].
+        verbose (bool, optional): Mode debug. Defaults to False.
+    """
+    figure, axes = color_graph_background(1,len(column_names))
+    i = 0
+    for column_name in column_names:
+        if len(column_names) > 1:
+            _draw_pie(df, column_name, axes[i], colors=colors, legend=legend, verbose=verbose)
+        else:
+            _draw_pie(df, column_name, axes, colors=colors, legend=legend, verbose=verbose)
+        i += 1
+    figure.set_size_inches(15, 5, forward=True)
+    figure.set_dpi(100)
+    figure.patch.set_facecolor(PLOT_FIGURE_BAGROUNG_COLOR)
+    figure.suptitle(column_name+" REPARTITION", fontsize=16)
+    plt.show()
+    print("draw_pie", column_name," ................................................. END")
+
+
+def draw_correlation_graphe(df, title, verbose=False):
+    """Dessine le graphe de corrélation des données
+
+    Args:
+        df (DataFrame): Données à représenter
+        verbose (bool, optional): Mode debug. Defaults to False.
+    """
+    corr_df = df.corr()
+    if verbose:
+        print("CORR ------------------")
+        print(corr_df, "\n")
+    figure, ax = color_graph_background(1,1)
+    figure.set_size_inches(18.5, 10.5, forward=True)
+    figure.set_dpi(100)
+    figure.suptitle(title, fontsize=16)
+    sns.heatmap(corr_df, annot=True)
+    plt.show()
+
+
+def regLin_np(x, y):
+    """
+    Ajuste une droite d'équation a*x + b sur les points (x, y) par la méthode
+    des moindres carrés.
+
+    Args :
+        * x (list): valeurs de x
+        * y (list): valeurs de y
+
+    Return:
+        * a (float): pente de la droite
+        * b (float): ordonnée à l'origine
+    """
+    # conversion en array numpy
+    x = np.array(x)
+    y = np.array(y)
+    # nombre de points
+    npoints = len(x)
+    # calculs des parametres a et b
+    a = (npoints * (x*y).sum() - x.sum()*y.sum()) / (npoints*(x**2).sum() - (x.sum())**2)
+    b = ((x**2).sum()*y.sum() - x.sum() * (x*y).sum()) / (npoints * (x**2).sum() - (x.sum())**2)
+    # renvoie des parametres
+    return a, b
+
+def draw_bar_tranches(df, group_columns=['tranche_age', 'categ'], sum_col='price', count_col='categ', unstack_col='categ', suptitle="Catégorie par tranche d'âge"):
+    ca_categ_age = df.groupby(group_columns)[sum_col].sum().unstack(unstack_col).fillna(0)
+    nb_categ_age = df.groupby(group_columns)[count_col].count().unstack(unstack_col).fillna(0)
+    figure, axes = color_graph_background(2,1)
+
+    # Affichage du nombre CA par catégorie
+    ca_categ_age.plot(kind='bar', stacked=True, ax=axes[0])
+    axes[0].yaxis.set_major_formatter(FuncFormatter(lambda x, p: "{:,.0f} €". format(x)))
+    axes[0].set_ylabel("CA en euros")
+    axes[0].xaxis.set_visible(False)
+    axes[0].grid(axis='y')
+
+    # Affichage du nombre de livres
+    nb_categ_age.plot(kind='bar', stacked=True, ax=axes[1])
+    axes[1].yaxis.set_major_formatter(FuncFormatter(lambda x, p: "{:,.0f}". format(x)))
+    axes[1].set_ylabel("Nombre de livres")
+    axes[1].grid(axis='y')
+
+    figure.set_size_inches(16, 8, forward=True)
+    figure.suptitle(suptitle, fontsize=16)
+    plt.xticks(rotation=45, ha="right")
+    plt.show()
+
+
+
+
+
+def _draw_pie(df, column_name, axe, colors=None, legend=True, verbose=False):
+    """Fonction pour dessiner un graphe pie pour la colonne reçue
+
+    Args:
+        df (DataFrame): Données à représenter
+        column_name (String): colonne à représenter
+        axe ([type]): [description]
+        colors ([type], optional): [description]. Defaults to None.
+        verbose (bool, optional): Mode debug. Defaults to False.
+    """
+    df_nova = df[~df[column_name].isna()][column_name].value_counts().reset_index()
+    df_nova = df_nova.sort_values("index")
+    # Affichage des graphiques
+    axe.pie(df_nova[column_name], labels=df_nova["index"], colors=colors, autopct='%.0f%%')
+    if legend:
+        axe.legend(df_nova["index"], loc="upper left")
+    else:
+        legend = axe.legend()
+        legend.remove()
+    axe.set_title(column_name)
+    axe.set_facecolor(PLOT_BAGROUNG_COLOR)
