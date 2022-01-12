@@ -80,11 +80,16 @@ ORDER BY titre;
 -- 	On projettera tous les attributs.
 SELECT l.nl, e.nl, a.na, e.na, nom, prenom, adr, tel, datEmp, dureeMax, dateRet
 FROM emprunter e, livres l, adherents a
-ORDER BY nom, datEmp;
+ORDER BY nom, datEmp
+LIMIT 0, 10000;
+
+SELECT * 
+FROM emprunter, livres 
+LIMIT 0, 10000;
 -- 	a.	Comptez manuellement le nombre d’attributs dans la table résultat ? Quelle formule donne le résultat ?
--- 1000
+-- 74250
 -- 	b.	Combien y a-t-il de tuples dans la table résultat ? Quelle formule donne le résultat ?
--- 1000
+-- 74250
 -- 	c•	Quelle est la clé primaire de la la table résultat ?
 -- l.nl, e.nl, a.na, e.na
 
@@ -330,7 +335,6 @@ select round(avg(if(dateRet is null, DATEDIFF(current_date(),datEmp),DATEDIFF(da
 from emprunter
 Where (dateRet is null AND dureeMax < DATEDIFF(current_date(),datEmp))
 OR (dateRet is not null AND dureeMax < DATEDIFF(dateRet,datEmp));
-
 
 -- *******************************************************************************************
 -- *******************************************************************************************
