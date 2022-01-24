@@ -202,3 +202,15 @@ if ma_dao.initialiser_bdd(verbose=verbose):
     print(f"---------------------- END ----------------------")
     
 
+
+
+
+def temp():
+    exe_sql()
+    lst = 116, 194, 334
+    threading.Timer(720.0, main).start()
+    print ("EXECUTION")
+    data = request_measurements(lst)
+    res_stations = fill_stations(lst,data)
+    res_mesurements = fill_measurements(lst, data)
+
