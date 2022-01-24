@@ -5,22 +5,291 @@ from statistics import median
 import itertools
 from random import randint
 from scipy.stats import chi2_contingency
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LassoCV, LogisticRegression, Ridge, SGDRegressor, LinearRegression,HuberRegressor, QuantileRegressor,TheilSenRegressor 
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.tree import DecisionTreeClassifier #for using Decision Tree Algoithm
 try:
     from sklearn.utils._testing import ignore_warnings
 except ImportError:
     from sklearn.utils.testing import ignore_warnings
+import warnings
 from sklearn.exceptions import ConvergenceWarning
-
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import make_pipeline
 
 VALEUR_PONT_INCONNU = "X"
 PLOT_FIGURE_BAGROUNG_COLOR = 'white'
 PLOT_BAGROUNG_COLOR = PLOT_FIGURE_BAGROUNG_COLOR
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_logistic_grid(X_train, y_train, verbose=False, random_state=0, grid_params=None):
+    if verbose: print("logisticregression")
+    if grid_params is None:
+        grid_params = { 'logisticregression__solver' : ["newton-cg", "lbfgs", "liblinear", "sag", "saga"],
+                        'logisticregression__penalty' : [None, 'l2', 'l1', 'elasticnet'],
+                        'logisticregression__fit_intercept' : [True, False]}
+    # penalty='l2', *, dual=False, tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, class_weight=None, random_state=None, solver='lbfgs', max_iter=100, multi_class='auto', verbose=0, warm_start=False, n_jobs=None, l1_ratio=None
+    grid_pipeline = make_pipeline( LogisticRegression(random_state=random_state))
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_linear_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("LinearRegression")
+    if grid_params is None:
+        grid_params = { 'linearregression__positive' :   [True, False],
+                        'linearregression__normalize' :     [True, False],
+                        'linearregression__fit_intercept' : [True, False]}
+    grid_pipeline = make_pipeline( LinearRegression())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_ridge_grid(X_train, y_train, verbose=False, random_state=0, grid_params=None):
+    if verbose: print("Ridge")
+    if grid_params is None:
+        grid_params = { 'ridge__alpha' :         [1],
+                        # 'ridge__normalize' :     [True, False], # Deprecated
+                        'ridge__solver' :        ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga', 'lbfgs'],
+                        'ridge__fit_intercept' : [True, False]}
+    grid_pipeline = make_pipeline( Ridge(random_state=random_state))
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_SGDRegressor_grid(X_train, y_train, verbose=False, random_state=0, grid_params=None):
+    if verbose: print("SGDRegressor")
+    if grid_params is None:
+        grid_params = { 'sgdregressor__loss' :   ['squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive'],
+                        'sgdregressor__penalty' : [None, 'l2', 'l1', 'elasticnet'],
+                        'sgdregressor__fit_intercept' : [True, False]}
+    grid_pipeline = make_pipeline( SGDRegressor(random_state=random_state))
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_lasso(X_train, y_train, verbose=False, random_state=0, grid_params=None):
+    if verbose: print("LassoCV")
+    if grid_params is None:
+        grid_params = { 'lassocv__alphas' :   [None],
+                        # 'lasso__normalize' :     [True, False], => Deprecated
+                        'lassocv__fit_intercept' : [True, False]}
+    grid_pipeline = make_pipeline( LassoCV(random_state=random_state))
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_random_forest(X_train, y_train, verbose=False, random_state=0, grid_params=None):
+    if verbose: print("RandomForestRegressor")
+    if grid_params is None:
+        grid_params = { 'randomforestregressor__n_estimators' : np.arange(1, 100, 10),
+                        'randomforestregressor__max_depth' : [None, 1, 2, 3],
+                        'randomforestregressor__max_features' : ['auto', 'sqrt'],
+                        'randomforestregressor__criterion' : ['squared_error', 'absolute_error', 'poisson'],
+                        'randomforestregressor__min_samples_leaf' : [1],
+                        'randomforestregressor__bootstrap' : [True, False],
+                        'randomforestregressor__min_samples_split' : [1, 2, 3]}
+    grid_pipeline = make_pipeline( RandomForestRegressor(random_state=random_state))
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+    
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_knn_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("KNeighborsRegressor", end="")
+    if grid_params is None:
+        grid_params = { 'kneighborsregressor__n_neighbors': np.arange(1, 20),
+                            'kneighborsregressor__p': np.arange(1, 10),
+                            'kneighborsregressor__metric' : ['minkowski', 'euclidean', 'manhattan'],
+                            'kneighborsregressor__algorithm' : ['auto', 'ball_tree', 'kd_tree', 'brute'],
+                            'kneighborsregressor__metric_params' : [None],
+                            'kneighborsregressor__n_jobs' : [None],
+                            'kneighborsregressor__weights' : ['uniform', 'distance']
+                            }
+    grid_pipeline = make_pipeline( KNeighborsRegressor())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_outliers_robust_HuberRegressor_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("HuberRegressor", end="")
+    if grid_params is None:
+        grid_params = { 'huberregressor__fit_intercept' : [True, False]
+                            }
+    grid_pipeline = make_pipeline( HuberRegressor())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_outliers_robust_QuantileRegressor_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("QuantileRegressor", end="")
+    if grid_params is None:
+        grid_params = { 'quantileregressor__quantile' : [0.5, 0.25, 0.75]
+                            }
+    grid_pipeline = make_pipeline( QuantileRegressor())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+
+
+
+
+@ignore_warnings(category=UserWarning)
+def get_models_grid_classifier_randomForest(X_train, y_train, verbose=False, random_state=0, grid_rf_params=None):
+    if verbose: print("randomforestclassifier", end="")
+    if grid_rf_params is None:
+        grid_rf_params = { 'randomforestclassifier__criterion' : ["gini", "entropy"],
+                       'randomforestclassifier__n_estimators' : np.arange(1, 100, 10)}
+    grid_rf_pipeline = make_pipeline( RandomForestClassifier(random_state=random_state))
+    grid_rf = GridSearchCV(grid_rf_pipeline,param_grid=grid_rf_params, cv=4)
+    grid_rf.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid_rf
+
+@ignore_warnings(category=UserWarning)
+def get_models_classifier_knn_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("kneighborsclassifier", end="")
+    if grid_params is None:
+        grid_params = { 'kneighborsclassifier__n_neighbors': np.arange(1, 20),
+                            'kneighborsclassifier__p': np.arange(1, 10),
+                            'kneighborsclassifier__metric' : ['minkowski', 'euclidean', 'manhattan'],
+                            'kneighborsclassifier__algorithm' : ['auto'],
+                            'kneighborsclassifier__metric_params' : [None],
+                            'kneighborsclassifier__n_jobs' : [None],
+                            'kneighborsclassifier__weights' : ['uniform']
+                            }
+    grid_pipeline = make_pipeline( KNeighborsClassifier())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
+    
+
+@ignore_warnings(category=UserWarning)
+def get_models_classifier_decision_tree_grid(X_train, y_train, verbose=False, random_state=0, grid_dtc_params=None):
+    if verbose: print("decisiontreeclassifier")
+    if grid_dtc_params is None:
+        grid_dtc_params = { 'decisiontreeclassifier__criterion' : ["gini", "entropy"],
+                        'decisiontreeclassifier__splitter' : ["best", "random"]}
+    grid_dtc_pipeline = make_pipeline( DecisionTreeClassifier(random_state=random_state))
+    grid_dtc = GridSearchCV(grid_dtc_pipeline,param_grid=grid_dtc_params, cv=4)
+    grid_dtc.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid_dtc
+    
+
+def get_models_grid(X_train, y_train, verbose=False):
+    grid_dic = {}
+    if verbose: print("randomforestclassifier", end="")
+    grid_rf_params = { 'randomforestclassifier__criterion' : ["gini", "entropy"],
+                   'randomforestclassifier__n_estimators' : np.arange(1, 100, 10)}
+    grid_rf_pipeline = make_pipeline( RandomForestClassifier(random_state=random_state))
+    grid_rf = GridSearchCV(grid_rf_pipeline,param_grid=grid_rf_params, cv=4)
+    grid_rf.fit(X_train, y_train)
+    grid_dic['randomforestclassifier'] = grid_rf
+    if verbose: print(", kneighborsclassifier", end="")
+    grid_params = { 'kneighborsclassifier__n_neighbors': np.arange(1, 20),
+                        'kneighborsclassifier__p': np.arange(1, 10),
+                        'kneighborsclassifier__metric' : ['minkowski', 'euclidean', 'manhattan'],
+                        'kneighborsclassifier__algorithm' : ['auto'],
+                        'kneighborsclassifier__metric_params' : [None],
+                        'kneighborsclassifier__n_jobs' : [None],
+                        'kneighborsclassifier__weights' : ['uniform']
+                        }
+    grid_pipeline = make_pipeline( KNeighborsClassifier())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    grid_dic['kneighborsclassifier'] = grid
+    if verbose: print(", decisiontreeclassifier", end="")
+    grid_dtc_params = { 'decisiontreeclassifier__criterion' : ["gini", "entropy"],
+                    'decisiontreeclassifier__splitter' : ["best", "random"]}
+    grid_dtc_pipeline = make_pipeline( DecisionTreeClassifier(random_state=random_state))
+    grid_dtc = GridSearchCV(grid_dtc_pipeline,param_grid=grid_dtc_params, cv=4)
+    grid_dtc.fit(X_train, y_train)
+    grid_dic['decisiontreeclassifier'] = grid_dtc
+    if verbose: print(", logisticregression", end="")
+    grid_lr_params = { 'logisticregression__solver' : ["newton-cg", "lbfgs", "liblinear", "sag", "saga"],
+                    'logisticregression__penalty' : [None, 'l2', 'l1', 'elasticnet'],
+                    'logisticregression__fit_intercept' : [True, False]}
+    # penalty='l2', *, dual=False, tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, class_weight=None, random_state=None, solver='lbfgs', max_iter=100, multi_class='auto', verbose=0, warm_start=False, n_jobs=None, l1_ratio=None
+    grid_lr_pipeline = make_pipeline( LogisticRegression(random_state=random_state))
+    grid_lr = GridSearchCV(grid_lr_pipeline,param_grid=grid_lr_params, cv=4)
+    grid_lr.fit(X_train, y_train)
+    grid_lr.b
+    grid_dic['logisticregression'] = grid_lr
+    if verbose: print("                 DONE")
+    return grid_dic
+
+
+warnings.filterwarnings("ignore")
+@ignore_warnings(category=ConvergenceWarning)
+def found_better_config_by_model(X_train, X_test, y_train, y_test, verbose=False):
+
+    # on prend un maximum de colonne pour commencer
+    columns_started = list(X_train.columns)
+    better_grid_score_dic = {}
+    better_grid_equals = {}
+    ever_test = []
+    
+    # Modifier l'ordre des colonnes pour trouver encore d'autres configurations pertinentes
+    # Positionnement de 6 suite aux tests lancés et des premiers résultats
+    for subset in itertools.permutations(columns_started, 6):
+        columns = list(subset)
+            
+        # a chaque tour, on regardera le meilleur score
+        while len(columns)>0:
+            str_col = str(sorted(columns))
+            if str_col not in ever_test:
+                grid_dic = get_models_grid(X_train[columns], y_train)
+                for model_name,grid in grid_dic.items():
+                    score = grid.score(X_test[columns], y_test)
+
+                    model_better_score = better_grid_score_dic.get(model_name, 0)
+                    model_grig_res = (grid, score, str_col)
+                    if score > model_better_score:
+                        model_better_score = score
+                        better_grid_equals[model_name] = [model_grig_res]
+                        if verbose:
+                            print(f"{model_name} New Best :{round(score,2)} de test, {str_col}, {grid.best_params_}")
+                    elif score == model_better_score:
+                        better_grid_equals[model_name].append(model_grig_res)
+                        if verbose:
+                            print(f"{model_name} Same Best :{round(score,2)} de test, {str_col}, {grid.best_params_}")
+
+                    better_grid_score_dic[model_name] = model_better_score
+                ever_test.append(str_col)
+                if verbose>1: print(str_col, "         DONE")
+            # On supprime une colonne
+            columns.pop()
+    
+    return better_grid_score_dic, better_grid_equals
+
+
+
 
 
 def get_numeric_columns_names(df, verbose=False):
@@ -580,6 +849,51 @@ def draw_pie_multiple_by_value(df, column_name, values, compare_column_names, ti
     figure.suptitle(titre, fontsize=16)
     plt.show()
     print("draw_pie_multiple_by_value", column_name," ................................................. END")
+
+
+def draw_polynomiale(df, col_x, col_y, col_group=None):
+    figure, axe = color_graph_background(1,1)
+
+    
+    # On affiche les données nettoyées
+    df.plot.scatter(col_x, col_y, c=col_group, colormap='viridis', ax=axe)
+
+    pf=PolynomialFeatures(degree=2,include_bias=False)
+    Xpf= pf.fit_transform(X)
+
+    linreg = LinearRegression()
+    linreg.fit(Xpf,y)
+    print(linreg.score(Xpf, y))
+
+    X_new = np.linspace(min(X.values), max(X.values), X.shape[0]).reshape(len(X), 1)
+    X_newPoly = pf.fit_transform(X_new)
+    y_new = linreg.predict(X_newPoly)
+
+    X_pred_poly = pf.fit_transform(X_pred)
+    y_pred2 = linreg.predict(X_pred_poly)
+
+    figure, axe = color_graph_background(1,1)
+    axe.scatter(X, y)
+    axe.plot(X_new, y_new, c='r', lw=3)
+    axe.scatter(X_pred, y_pred2, c='g', marker='+', lw=3)
+    figure.set_size_inches(16, 8, forward=True)
+
+    axe.set_xlabel(col_x)
+    axe.set_ylabel(col_y)
+
+
+    mini = min(df[col_x])
+    maxi = max(df[col_x]) + 1
+
+    X = np.matrix([np.ones(df.shape[0]), df[col_x]]).T
+    y = np.matrix(df[col_y]).T
+    theta = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
+    axe.plot([mini,maxi], [theta.item(0),theta.item(0) + maxi * theta.item(1)], linestyle='--', c='#000000')
+
+    figure.set_size_inches(16, 8, forward=True)
+    plt.xticks(rotation=45, ha="right")
+    plt.title(col_x + " " + col_y)
+    plt.show()
 
 
 def draw_regression2(df, col_x, col_y, col_group=None):

@@ -214,7 +214,7 @@ class GestionnaireDeStations:
         if isinstance(stations, Station):
             self._stations[stations.id] = stations
         elif isinstance(stations, list):
-            for st in list:
+            for st in stations:
                 self.stations = st
         elif isinstance(stations, dict):
             for st in stations.values():

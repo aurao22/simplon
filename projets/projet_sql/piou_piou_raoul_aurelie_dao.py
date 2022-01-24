@@ -1,3 +1,4 @@
+import atexit
 import sqlite3
 from os import getcwd, remove, path
 from piou_piou_raoul_aurelie_objets import *
@@ -136,11 +137,83 @@ class PiouPiouDao:
 
     def stations(self, verbose=False):
         res = self._executer_sql(f"SELECT id, station_name, latitude, longitude FROM station ORDER BY id;", verbose=verbose)
-        return res
+        stations_list = []
+        for row in res:
+            station = Station(id=row[0], name=row[1], latitude=row[2], longitude=row[3])
+            stations_list.append(station)
+        return stations_list
 
-    def mesures(self, verbose=False):
-        res = self._executer_sql(f"SELECT id, mesure_date, wind_heading, wind_speed_avg, wind_speed_min, wind_speed_max, station FROM mesure ORDER BY station, id;", verbose=verbose)
-        return res
+    def mesures(self, id_station=None, verbose=False):
+
+        sql = ""
+        if id_station is not None and isinstance(id_station, int):
+            sql = f"SELECT id, mesure_date, wind_heading, wind_speed_avg, wind_speed_min, wind_speed_max, station FROM mesure WHERE station = {id_station} ORDER BY id;"
+        else:
+            sql = f"SELECT id, mesure_date, wind_heading, wind_speed_avg, wind_speed_min, wind_speed_max, station FROM mesure ORDER BY station, id;"
+
+        res = self._executer_sql(sql, verbose=verbose)
+        mesures_list = []
+        for row in res:
+            # date, wind_heading, wind_speed_avg, wind_speed_max, wind_speed_min, station
+            mesure = Mesure(date=row[1],wind_heading=row[2], wind_speed_avg=row[3], wind_speed_max=row[5], wind_speed_min=row[4])
+            mesures_list.append(mesure)
+
+        return mesures_list
+
+
+    def select_mesures(self, station=None, mesure_date=None, wind_heading=None, wind_speed_avg=None, wind_speed_min=None,wind_speed_max=None, id_mesure=None, verbose=False):
+
+        nb_param = 0
+
+        sql = f"SELECT id, mesure_date, wind_heading, wind_speed_avg, wind_speed_min, wind_speed_max, station FROM mesure "
+        sql_where = ""
+        sql_key = "WHERE"
+        sql_end = " ORDER BY station, id;"
+
+        if station is not None and isinstance(station, Station):
+            sql_where += f"{sql_key} station = {station.id} "
+            nb_param += 1
+            sql_key = "AND"
+        
+        if id_mesure  is not None and isinstance(id_mesure, int):
+            sql_where += f"{sql_key} id = {id_mesure} "
+            nb_param += 1
+            sql_key = "AND"
+
+        if mesure_date  is not None and isinstance(mesure_date, str):
+            sql_where += f"{sql_key} mesure_date = '{mesure_date}' "
+            nb_param += 1
+            sql_key = "AND"
+
+        if wind_heading  is not None and isinstance(wind_heading, float):
+            sql_where += f"{sql_key} wind_heading = {wind_heading} "
+            nb_param += 1
+            sql_key = "AND"
+
+        if wind_speed_avg  is not None:
+            sql_where += f"{sql_key} wind_speed_avg = {wind_speed_avg} "
+            nb_param += 1
+            sql_key = "AND"
+
+        if wind_speed_min  is not None:
+            sql_where += f"{sql_key} wind_speed_min = {wind_speed_min} "
+            nb_param += 1
+            sql_key = "AND"
+
+        if wind_speed_max  is not None:
+            sql_where += f"{sql_key} wind_speed_max = {wind_speed_max} "
+            nb_param += 1
+            sql_key = "AND"
+
+        requete = sql+sql_where+sql_end
+        res = self._executer_sql(requete, verbose=verbose)
+        mesures_list = []
+        for row in res:
+            # date, wind_heading, wind_speed_avg, wind_speed_max, wind_speed_min, station
+            mesure = Mesure(date=row[1],wind_heading=row[2], wind_speed_avg=row[3], wind_speed_max=row[5], wind_speed_min=row[4], station=station)
+            mesures_list.append(mesure)
+
+        return mesures_list
 
 
     def initialiser_bdd(self, drop_if_exist = False, verbose=False):

@@ -123,36 +123,41 @@ def mesure_courante_pour_la_station(url, station, verbose=False):
             else:
                 raise Exception(f"La mesure reçue pour la station {id}-{name} ne concerne pas la station {station.id}-{station.name}")
         else:
-            print(f'{resp.status_code} => {data["error_code"]} : {data["error_message"]}')
+            print(f'{resp.status_code} => {data["error_code"]} : {data["error_message"]} \n {url+str(station.id)}')
             resp.raise_for_status()
     return mesure
    
 
+def synchroniser_bdd(gestionnaire, ma_dao, verbose=False):
+    stations = gestionnaire.stations
+    # Récupéreration des mesures pour chaque station
+    for station in stations.values():
+        
+        # Vérifier si les mesures en BDD sont différentes ou non
+        for mesure in station.mesures:
+            # id_station=None, mesure_date=None, wind_heading=None, wind_speed_avg=None, wind_speed_min=None,wind_speed_max=None
+            dao_mesure_list = ma_dao.select_mesures(station=mesure.station, mesure_date=mesure.date, wind_heading=mesure.wind_heading, wind_speed_avg=mesure.wind_speed_avg, wind_speed_min=mesure.wind_speed_min,wind_speed_max=mesure.wind_speed_max, verbose=verbose)
+            if dao_mesure_list is not None and len(dao_mesure_list)>0:
+                pass
+            else:
+                # Sauvegarder en BDD
+                ma_dao.ajouter_mesure(mesure, verbose)
+
+
 def recuperer_mesures(url, gestionnaire, verbose=False):
 
     mesures_ajoutees = []
+    stations = gestionnaire.stations
     # Récupéreration des mesures pour chaque station
-    for station in gestionnaire.stations:
+    for station in stations.values():
         mesure = mesure_courante_pour_la_station(url, station, verbose)
+
         if mesure is not None:
             nouvelle_mesure = station.ajouter_mesure(mesure)
-            if nouvelle_mesure != mesure:
-                # Sauvegarder en BDD
-                mesures_ajoutees.append( ma_dao.ajouter_mesure(nouvelle_mesure))
+            
     return mesures_ajoutees
 
 
-def proposition_arret_programme():      
-    try:
-        foo = input(f'Vous avez {TIMEOUT} seconde pour quitter en tapant "exit" :')
-        return foo
-    except:
-        # timeout
-        return
-   
-def nouvelle_mise_jour(signum, frame):
-    # Récupéreration des mesures pour chaque station
-    mesures_ajoutees = recuperer_mesures(PP_URL_API_LIVE, gestionnaire, verbose)
 
 # ---------------------------------------------------------------------------------------------
 #                               MAIN
@@ -179,29 +184,20 @@ if ma_dao.initialiser_bdd(verbose=verbose):
     nb_stations = ma_dao.nombre_stations(verbose=verbose)
     if nb_stations == 0:
         raise Exception("Aucune station.")
+        
+    station_list = ma_dao.stations()
+    if station_list is not None:
+        # Ajout de la nouvelle station dans le gestionnaire
+        gestionnaire.stations = station_list
+        
     
-    
-    station_rows = ma_dao.stations()
-    if station_rows is not None:
-        for row in station_rows:
-            nouvelle_station = Station(station_rows[0], station_rows[1], station_rows[2], station_rows[3])
-            # Ajout de la nouvelle station dans le gestionnaire
-            gestionnaire.stations = nouvelle_station
-    
-    # TODO : à voir si on veut récupérer les mesures déjà en BDD ou non.
-
     # Boucler pour mise à jour régulière
-    
-    # signal.signal(signal.SIGALRM, nouvelle_mise_jour)
     sortie = False    
     while not sortie:
-        # set alarm
-        # signal.alarm(TIMEOUT)
-        s = proposition_arret_programme()
+         # Récupéreration des mesures pour chaque station
+        mesures_ajoutees = recuperer_mesures(PP_URL_API_LIVE, gestionnaire, verbose)
+        synchroniser_bdd(gestionnaire, ma_dao, verbose)
         time.sleep(SLEEP_TIME)
-        sortie = "exit" in s
-        # disable the alarm after success
-        # signal.alarm(0)
 
     print(f"---------------------- END ----------------------")
     
