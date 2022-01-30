@@ -5,6 +5,7 @@ from statistics import median
 import itertools
 from random import randint
 from scipy.stats import chi2_contingency
+from scipy.stats import chi2
 from sklearn.linear_model import LassoCV, LogisticRegression, Ridge, SGDRegressor, LinearRegression,HuberRegressor, QuantileRegressor,TheilSenRegressor 
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.preprocessing import PolynomialFeatures
@@ -155,7 +156,30 @@ def get_models_regression_outliers_robust_QuantileRegressor_grid(X_train, y_trai
     if verbose: print("             DONE")
     return grid
 
+@ignore_warnings(category=UserWarning)
+def get_models_regression_outliers_robust_QuantileRegressor_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("QuantileRegressor", end="")
+    if grid_params is None:
+        grid_params = { 'quantileregressor__quantile' : [0.5, 0.25, 0.75]
+                            }
+    grid_pipeline = make_pipeline( QuantileRegressor())
+    grid = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid
 
+
+@ignore_warnings(category=UserWarning)
+def get_models_regression_outliers_robust_HuberRegressor_grid(X_train, y_train, verbose=False, grid_params=None):
+    if verbose: print("HuberRegressor", end="")
+    if grid_params is None:
+        grid_params = { 'huberregressor__fit_intercept' : [True, False]
+                            }
+    grid_pipeline = make_pipeline( HuberRegressor())
+    grid_knn = GridSearchCV(grid_pipeline,param_grid=grid_params, cv=4)
+    grid_knn.fit(X_train, y_train)
+    if verbose: print("             DONE")
+    return grid_knn
 
 
 @ignore_warnings(category=UserWarning)
@@ -244,6 +268,49 @@ def get_models_grid(X_train, y_train, verbose=False):
     if verbose: print("                 DONE")
     return grid_dic
 
+warnings.filterwarnings("ignore")
+@ignore_warnings(category=ConvergenceWarning)
+def found_better_model(X_train, X_test, y_train, y_test, models_grid_list, verbose=False):
+
+    # on prend un maximum de colonne pour commencer
+    columns_started = list(X_train.columns)
+    better_grid_score_dic = {}
+    better_grid_equals = {}
+    ever_test = []
+    
+    # Modifier l'ordre des colonnes pour trouver encore d'autres configurations pertinentes
+    # Positionnement de 6 suite aux tests lancés et des premiers résultats
+    for subset in itertools.permutations(columns_started, 6):
+        columns = list(subset)
+            
+        # a chaque tour, on regardera le meilleur score
+        while len(columns)>0:
+            str_col = str(sorted(columns))
+            if str_col not in ever_test:
+                for model_name, model_grid in models_grid_list.items():
+                    model_grid.fit(X_train[columns], y_train)
+                    score = model_grid.score(X_test[columns], y_test)
+
+                    model_better_score = better_grid_score_dic.get(model_name, 0)
+                    model_grig_res = (model_grid, score, str_col)
+                    if score > model_better_score:
+                        model_better_score = score
+                        better_grid_equals[model_name] = [model_grig_res]
+                        if verbose:
+                            print(f"{model_name} New Best :{round(score,2)} de test, {str_col}, {model_grid.best_params_}")
+                    elif score == model_better_score:
+                        better_grid_equals[model_name].append(model_grig_res)
+                        if verbose:
+                            print(f"{model_name} Same Best :{round(score,2)} de test, {str_col}, {model_grid.best_params_}")
+
+                    better_grid_score_dic[model_name] = model_better_score
+                ever_test.append(str_col)
+                if verbose>1: print(str_col, "         DONE")
+            # On supprime une colonne
+            columns.pop()
+    
+    return better_grid_score_dic, better_grid_equals
+
 
 warnings.filterwarnings("ignore")
 @ignore_warnings(category=ConvergenceWarning)
@@ -330,18 +397,22 @@ def get_outliers_datas(df, colname):
 
 
 def calcul_chi2(df, x, y, debug=False):
-    chi2_cross_age = pd.crosstab(df[x],df[y])
-    (chi2_val, p, degree, expected) = chi2_contingency(observed=chi2_cross_age)
-    if debug:
-        print(chi2_cross_age)  
-        print("chi² val:", chi2_val, "P value:", p, "degree:", degree)
-        print(expected)
+    # le risque  
     alpha = 0.05
-    print(f"chi² val: {chi2_val}, degree: {degree}, p value = {p} => ", end="") 
-    if p <= alpha: 
-        print(f'{y} ne dépend PAS de {x}') 
-    else: 
-        print(f'{y} dépend de {x}')
+    tab_contingence  = pd.crosstab(df[x],df[y])
+    (chi2_val, p, degree, expected) = chi2_contingency(observed=tab_contingence )
+    if debug:
+        print('tableau de contingence : \n', tab_contingence)
+        print(expected)
+        critical = chi2.ppf(1-alpha, degree) 
+        print('critical : ', critical)
+    
+    print(f"chi² val: {round(chi2_val,5)}, degree: {degree}, p value = {round(p, 5)} => ", end="") 
+    # H0 : X et Y sont indépendantes
+    if p <= alpha: # Rejet de l'hypothèse
+        print(f'{y} dépend de {x} avec un risque {alpha}') 
+    else: # Validation de l'hypothèse
+        print(f'{y} NE dépend PAS de {x}')
     return p
 
 
@@ -764,6 +835,30 @@ def lorens(price, title, xlabel, ylabel ):
     plt.show()
     return lorenz_price
 
+def draw_y(X_test, x_col_name, y_test, y_pred, dict_y_pred):
+    figure, axes = color_graph_background(2,3)
+    i = 0
+    j = 0
+    for model_name, y_pred in dict_y_pred.items():
+        if "SGDRegressor" in model_name:
+            continue
+        else:
+            axe = axes[i][j]
+            axe.scatter(X_test[x_col_name], y_test/1000, color='blue', label='expected')
+            axe.scatter(X_test[x_col_name], y_pred/1000, color='red', marker='+', label='prediction')
+            axe.set_title(model_name)
+            axe.yaxis.set_major_formatter(FuncFormatter(lambda x, p: "{:,.0f} K€". format(x)))
+            axe.set_ylabel('median_house_value')
+            axe.legend()
+            j += 1
+            if j == 3:
+                j = 0
+                i += 1
+    figure.suptitle('Comparaison predictions vs expected > x='+x_col_name, fontsize=16)
+    figure.set_size_inches(15, 5*3, forward=True)
+    figure.set_dpi(100)
+    plt.show()
+
 
 def draw_pie_multiple_by_value(df, column_name, values, compare_column_names, titre="", legend=True, verbose=False, max_col = 4 , colors=None):
     """ Fonction pour dessiner un graphe pie pour la colonne reçue
@@ -933,6 +1028,28 @@ def draw_regression_3d(df, col_x, col_y, col_hue, col_group=None):
     plt.title(col_x + " " + col_y)
     plt.legend()
     plt.show()
+
+
+def draw_regression_3d2(df, col_x, col_y, col_z, col_group=None, colors=None): 
+    fig = plt.figure(figsize=(16, 8))
+    ax = fig.add_subplot(111, projection = '3d')
+
+    # Pour faciliter la visualisation, on va changer la valeur de l'arrondissement (10)
+    tmp_arr = df[col_z][:]
+    c = list(colors.keys())
+    p = None
+    if col_group is None:
+        p = ax.scatter(tmp_arr, df[col_x], df[col_y], c=tmp_arr, cmap="viridis")
+    else:
+        # df['continent'].map(colors)
+        ax.scatter(tmp_arr, df[col_x], df[col_y], c=df[col_group].map(colors))
+ 
+    ax.set_xlabel(col_x)
+    ax.set_ylabel(col_y)
+    ax.set_zlabel(col_z)
+    if p is not None:
+        fig.colorbar(p)
+    plt.title(col_x + ", " + col_y + ", "+col_z)
 
 
 def _draw_pie(df, column_name, axe, colors=None, legend=True, verbose=False):

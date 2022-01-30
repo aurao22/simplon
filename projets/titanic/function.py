@@ -5,6 +5,7 @@ from statistics import median
 import itertools
 from random import randint
 from scipy.stats import chi2_contingency
+from scipy.stats import chi2
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -265,18 +266,25 @@ def get_outliers_datas(df, colname):
 
 
 def calcul_chi2(df, x, y, debug=False):
-    chi2_cross_age = pd.crosstab(df[x],df[y])
-    (chi2_val, p, degree, expected) = chi2_contingency(observed=chi2_cross_age)
-    if debug:
-        print(chi2_cross_age)  
-        print("chi² val:", chi2_val, "P value:", p, "degree:", degree)
-        print(expected)
+    # le risque  
     alpha = 0.05
-    print(f"chi² val: {chi2_val}, degree: {degree}, p value = {p} => ", end="") 
+    tab_contingence  = pd.crosstab(df[x],df[y])
+    (chi2_val, p, degree, expected) = chi2_contingency(observed=tab_contingence )
+    if debug:
+        print(tab_contingence)
+        print(f"chi² val: {round(chi2_val,5)}, degree: {degree}, p value = {round(p, 5)} => ", end="") 
+        print('tableau de contingence : \n', tab_contingence)
+        print(expected)
+        critical = chi2.ppf(1-alpha, degree) 
+        print('critical : ', critical)
+    
+    print(f"chi² val: {round(chi2_val,5)}, degree: {degree}, p value = {round(p, 5)} => ", end="") 
+    # H0 : X et Y sont indépendantes
     if p <= alpha: 
-        print(f'{y} ne dépend PAS de {x}') 
+        
+        print(f'{y} dépend de {x} avec un risque {alpha}') 
     else: 
-        print(f'{y} dépend de {x}')
+        print(f'{y} NE dépend PAS de {x}')
     return p
 
 
@@ -720,6 +728,9 @@ def lorens(price, title, xlabel, ylabel ):
     plt.legend(loc="best")
     plt.show()
     return lorenz_price
+
+
+
 
 
 def draw_pie_multiple_by_value(df, column_name, values, compare_column_names, titre="", legend=True, verbose=False, max_col = 4 , colors=None):
