@@ -41,7 +41,7 @@ INSERT INTO APPRENANT (nom, prenom, mail, pseudo_discord, anciennete, entreprise
 ('ADEL', 'Mehdi', 'zeadel.mehdi@gmail.com','N7Mehdi', 2, 3),
 ('BARRE', 'Halimata', 'halimataba54@gmail.com','halimata', NULL,4),
 ('BOURY', 'Damien', 'bourydamien1@gmail.com','Boury Damien', NULL,10),
-('BRUN', 'Christel', 'brunday@gmail.com','Xel', 15,4),
+('BRUN', 'Christel', 'brunday@gmail.com','Xel', 0,4),
 ('COURTEAU', 'Julien', 'juliencourteau22@gmail.com','juliencrt', 0,3),
 ('DROUILLARD', 'Erwan', 'erwan.drouillard@gmail.com ','Erwan22', 0,6),
 ('FIN', 'Yohann', 'yohann.fin13@gmail.com','Yohann', 4,5),
@@ -54,13 +54,13 @@ INSERT INTO APPRENANT (nom, prenom, mail, pseudo_discord, anciennete, entreprise
 ('MAURIAUCOURT', 'Guillaume', 'proracevdt@gmail.com','Tyrax', 0,4),
 ('PASQUIERS', 'Anatole', 'anatole.pasquiers1@gmail.com','Pasquiers Anatole', 0,4),
 ('PREVOT', 'Vincent', 'vincentprv22@gmail.com','Vincent', 0,4),
-('RAOUL', 'Aurélie', 'raoulaur@gmail.com','Aurélie', 15, 7),
+('RAOUL', 'Aurélie', 'raoulaur@gmail.com','Aurélie', 1, 7),
 ('SALAUN', 'Morgan', 'mowglyzer@gmail.com','Morgan S', 0,3);
 
 SELECT * FROM ENTREPRISE;
 
 -- Exemple de mise à jour multiple
-UPDATE APPRENANT SET entreprise = 4 WHERE prenom = 'Christel' OR prenom = 'Guillaume' OR prenom = 'Vincent' OR prenom = 'Halimata' OR prenom = 'Anatole';
+-- UPDATE APPRENANT SET entreprise = 4 WHERE prenom = 'Christel' OR prenom = 'Guillaume' OR prenom = 'Vincent' OR prenom = 'Halimata' OR prenom = 'Anatole';
 
 -- Vérification que tous les apprenants ont une entreprise
 SELECT * 
@@ -91,6 +91,12 @@ GROUP BY E.ville;
 SELECT *
 FROM APPRENANT A, ENTREPRISE E
 WHERE E.id = A.entreprise
+ORDER BY E.ville;
+
+SELECT *
+FROM APPRENANT A, 
+INNER JOIN ENTREPRISE E
+on A.entreprise = E.id 
 ORDER BY E.ville;
 
 SELECT nom, prenom
