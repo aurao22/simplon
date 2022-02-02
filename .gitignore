@@ -128,6 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 2022-01-RegressionsLogistics/archive.zip
-projets/logement/.~lock.*.odp#
 2022-02-regex/img/*
-
+.~lock*
