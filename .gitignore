@@ -134,3 +134,6 @@ dmypy.json
 2022-02-4470541-analysez-vos-donnees-textuelles/cnn2/cnn.zip
 2022-02-SVM/tpsvm/liblinear-2.2/*
 2022-02-SVM/evaluation_metrics_classification.mp4
+NLP-CNN/cnn
+NLP-CNN/cnn/*.html
+NLP-CNN/cnn2/cnn.zip
