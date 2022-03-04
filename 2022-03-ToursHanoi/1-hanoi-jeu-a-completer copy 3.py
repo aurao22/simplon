@@ -1,4 +1,3 @@
-from click import Parameter
 from fonction_affiche_hanoi import affiche
 
 def display(state, status="", nb_disques=4):
@@ -97,21 +96,16 @@ def is_end(state):
     return len(state[0]) == 0 and len(state[1]) == 0
     #     Fin de votre code <<<
 
-def get_combinaisons(state=None,excluded_moves=[]):
+def get_combinaisons(excluded_moves=[]):
 
     possibilities = set()
-    if (state is not None and not is_end(state)) or state is None:
-        for i in range(0, 3):
-            for j in range(0,3):
-                if i != j:
-                    move = (i,j)
-                    if move not in excluded_moves:
-                        if state is not None :
-                            # On vérifie si le coup est valide avant de l'ajouter
-                            if is_valid(state, move):
-                                possibilities.add((i, j))
-                        else:
-                            possibilities.add((i, j))
+
+    for i in range(0, 3):
+        for j in range(0,3):
+            if i != j:
+                move = (i,j)
+                if move not in excluded_moves:
+                    possibilities.add((i, j))
 
     return possibilities
 
@@ -123,7 +117,7 @@ def search_next_move_random(state, excluded_moves=[]):
     # valeur par défaut puisque c'est la cible
     end = 3
 
-    possibilities = list(get_combinaisons(state=state, excluded_moves=excluded_moves))
+    possibilities = list(get_combinaisons(excluded_moves=excluded_moves))
     finish = False
     found = False
     while not finish:
@@ -143,59 +137,23 @@ def search_next_move_random(state, excluded_moves=[]):
 def get_tours():
     return {0,1,2}
 
-from copy import deepcopy
 
-def hanoi(state, nb_step=0, success_states_moves=None, previous_move=None, ever_play=[]):
-    if state is None:
-        raise AttributeError("state missing")
-
+def hanoi(state, nb=0, success_states_moves=[], fail_staites_moves=[]):
     if (is_end(state)):
-        return (True, nb_step, success_states_moves)
+        return state, all_states, nb
 
-    excluded_moves=[]
-    if previous_move is not None:
-        excluded_moves = [get_reverse_move(previous_move)]
+    found = False
 
-    possibilities = list(get_combinaisons(state=state, excluded_moves=excluded_moves))
-
-    if success_states_moves is None:
-        success_states_moves = []
+    moves = []
+    while found:
+        move = search_next_move_random(state=state, excluded_moves=moves)
+        if move is not None:
+            nb += nb
+            state = successor(state, move)
+            all_states.append(state)
+            return hanoi(state=state, nb=nb, all_states=all_states)
     
-    state_to_test = {}
-    if possibilities is not None:
-        for move in possibilities:
-            if is_valid(state, move):
-                current_state = deepcopy(state)
-                dic_state = tuple(current_state[0], current_state[1], current_state[2])
-                if not dic_state in ever_play:
-                    ever_play.append(dic_state)
-                    current_state = successor(current_state, move)
-                    state_to_test[move] = current_state
-                    # test des noeuds du même niveau uniquement
-                    if (is_end(current_state)):
-                        success_states_moves.append(move)
-                        return (True, nb_step+1, success_states_moves)
 
-        # Aucun noeud du niveau ne termine le jeu    
-        # les possibilités non valide ont déjà été retirées de la liste des possibilités
-        for move,current_state in state_to_test.items():
-            temp = deepcopy(success_states_moves)
-            temp.append(move)
-            child_end = False
-            try:
-                (child_end, nb_step_child, success_child_child_moves) = hanoi(current_state, nb_step+1, success_states_moves=temp, previous_move=move, ever_play=ever_play)
-            except Exception as error:
-                print(error)
-            if child_end:
-                return (True, nb_step_child, success_child_child_moves)
-
-    
-    # Cas blocage
-    raise Exception("Pas de solution")
-       
-
-def get_reverse_move(move):
-    return (move[1], move[0])
 
 def search_next_move_ia_old(state, nb_disques, last_move):
     start = 0
@@ -311,36 +269,25 @@ def play(nb_disques = 3):
             elif "auto" in mode or "random" in mode:
                 if "random" in mode:
                     move = search_next_move_random(state=state)
-                    if move is None:
-                        print("Aucun mouvement possible")
-                        break
-                    else:
-                        (start, end) = move
                 else:
-                    try:
-                        (res, nb_step_child, success_child_child_moves) = hanoi(state, nb_step=0, success_states_moves=None)
-                        if res:
-                            if success_child_child_moves is not None:
-                                for mv in success_child_child_moves:
-                                    state = successor(state, mv)
-                                    display(state=state, nb_disques=nb_disques)
-                                i = (len(success_child_child_moves)-1)
-                    except Exception as error:
-                        print(error)
-                if not is_end(state):
-                    saisie = input("Next move (enter) or quit (exit)")
-                    if "exit" in saisie:
-                        exit = True
+                    state = hanoi(state, nb_disques, a=0, b=1, c=2)
+                    display(state=state, nb_disques=nb_disques)
+
+                if move is None:
+                    print("Aucun mouvement possible")
+                    break
+                else:
+                    (start, end) = move
+                saisie = input("Next move (enter) or quit (exit)")
+                if "exit" in saisie:
+                    exit = True
             else:
                 break
 
             state = successor(state, (start, end))
             i += 1
         display(state, status="")
-        if is_end(state):
-            print("Vous avez gagné en", i, "coups")
-        else:
-            print("Game over")
+        print("Vous avez gagné en", i, "coups")
     else:
         print("Interruption du jeu")
 
@@ -389,20 +336,5 @@ def test():
     # # True
 
 
-def test_combinaisons():
-    state = [], [], [3, 2, 1]
-    assert len(get_combinaisons(state=state)) == 0
-
-    nb_disques = 3
-    state = test_init(nb_disques)
-    assert get_combinaisons(state=state) == {(0, 1), (0, 2)}
-
-    state = test_move1(state, nb_disques)
-
-    excluded_moves=[get_reverse_move((0, 2))]
-    assert get_combinaisons(state=state, excluded_moves=excluded_moves) == {(0, 1), (2, 1)}
-    
-
 if __name__ == ('__main__'):
     play()
-    # test_combinaisons()

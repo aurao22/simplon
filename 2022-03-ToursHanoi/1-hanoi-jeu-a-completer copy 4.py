@@ -145,7 +145,7 @@ def get_tours():
 
 from copy import deepcopy
 
-def hanoi(state, nb_step=0, success_states_moves=None, previous_move=None, ever_play=[]):
+def hanoi(state, nb_step=0, success_states_moves=None, previous_move=None):
     if state is None:
         raise AttributeError("state missing")
 
@@ -166,15 +166,12 @@ def hanoi(state, nb_step=0, success_states_moves=None, previous_move=None, ever_
         for move in possibilities:
             if is_valid(state, move):
                 current_state = deepcopy(state)
-                dic_state = tuple(current_state[0], current_state[1], current_state[2])
-                if not dic_state in ever_play:
-                    ever_play.append(dic_state)
-                    current_state = successor(current_state, move)
-                    state_to_test[move] = current_state
-                    # test des noeuds du même niveau uniquement
-                    if (is_end(current_state)):
-                        success_states_moves.append(move)
-                        return (True, nb_step+1, success_states_moves)
+                current_state = successor(current_state, move)
+                state_to_test[move] = current_state
+                # test des noeuds du même niveau uniquement
+                if (is_end(current_state)):
+                    success_states_moves.append(move)
+                    return (True, nb_step+1, success_states_moves)
 
         # Aucun noeud du niveau ne termine le jeu    
         # les possibilités non valide ont déjà été retirées de la liste des possibilités
@@ -183,7 +180,7 @@ def hanoi(state, nb_step=0, success_states_moves=None, previous_move=None, ever_
             temp.append(move)
             child_end = False
             try:
-                (child_end, nb_step_child, success_child_child_moves) = hanoi(current_state, nb_step+1, success_states_moves=temp, previous_move=move, ever_play=ever_play)
+                (child_end, nb_step_child, success_child_child_moves) = hanoi(current_state, nb_step+1, success_states_moves=temp, previous_move=move)
             except Exception as error:
                 print(error)
             if child_end:
@@ -337,10 +334,7 @@ def play(nb_disques = 3):
             state = successor(state, (start, end))
             i += 1
         display(state, status="")
-        if is_end(state):
-            print("Vous avez gagné en", i, "coups")
-        else:
-            print("Game over")
+        print("Vous avez gagné en", i, "coups")
     else:
         print("Interruption du jeu")
 
