@@ -18,5 +18,7 @@ Bien cordialement,
 
 
 """
-
-print(len(text.split()))
+text = "bretagne/lannion-22300/"
+print(len(text[:-1].split("/")))
+print(text[:-7].split("/"))
+print(",".join(text[:-1].split("/")))
