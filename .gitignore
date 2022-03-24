@@ -137,3 +137,13 @@ dmypy.json
 NLP-CNN/cnn
 NLP-CNN/cnn/*.html
 NLP-CNN/cnn2/cnn.zip
+2022-03-Images/dataset/*.jpeg
+2022-03-Images/dataset/*.jpg
+2022-03-Images/dataset/*.png
+2022-03-Images/dataset_800/*.jpeg
+2022-03-Images/dataset_800/*.jpg
+2022-03-Images/dataset_800/*.png
+2022-03-Images/dataset_origine/*.jpeg
+2022-03-Images/dataset_origine/*.jpg
+2022-03-Images/dataset_origine/*.png
+dataset_test.zip
