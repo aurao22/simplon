@@ -1,1 +1,16 @@
-<mxfile host="app.diagrams.net" modified="2022-05-16T12:55:10.293Z" agent="5.0 (Windows)" version="18.0.5" etag="XnSy0p-5U9VdHv8E2hTR" type="github"><diagram id="zpOUXv7veA4DBRBq1obv">UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+<mxfile host="app.diagrams.net" modified="2022-05-16T13:25:58.316Z" agent="5.0 (Windows)" etag="hYL7c_XlJmwfLG_sAg_o" version="18.0.5" type="github">
+  <diagram id="zpOUXv7veA4DBRBq1obv" name="Page-1">
+    <mxGraphModel dx="1038" dy="501" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="v1ncO_xghCPxQYF_cH6F-2" value="AUTEUR" style="swimlane;" vertex="1" parent="1">
+          <mxGeometry x="30" y="40" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="v1ncO_xghCPxQYF_cH6F-3" value="OUVRAGE" style="swimlane;" vertex="1" parent="1">
+          <mxGeometry x="360" y="40" width="200" height="200" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
