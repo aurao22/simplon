@@ -39,3 +39,9 @@ conda env create -f test.yml
 # https://towardsdatascience.com/get-your-conda-environment-to-show-in-jupyter-notebooks-the-easy-way-17010b76e874
 (new-env)$ conda install ipykernel
 (new-env)$ipython kernel install --user --name=test
+
+# Créer un environnement virtuel
+python -m venv <myenvname>
+
+# Please note that venv does not permit creating virtual environments with other versions of Python. For that, install and use the virtualenv
+virtualenv --python=/usr/bin/python2.6 <path/to/new/virtualenv/>
