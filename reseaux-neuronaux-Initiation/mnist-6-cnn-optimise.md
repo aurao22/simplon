@@ -1,3 +1,3 @@
-# mnist-5-cnn
+# mnist-6-cnn-optimise
 
 plus d'infos prochainement
