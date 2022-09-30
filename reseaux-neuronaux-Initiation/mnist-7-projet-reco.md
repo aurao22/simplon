@@ -11,3 +11,8 @@ Pour ce faire vous montrerez votre capacité à reconnaitre un chiffre dessiné 
 
 A vous de déterminer les grandes étapes du projet et de le réaliser.
 
+
+Projet :
+1. Modèle avec enregistrement
+1. Dessiner un chiffre dans un logiciel tiers et faire le test
+1. développer l'interface pour dessiner un nombre
