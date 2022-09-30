@@ -20,6 +20,49 @@ from sklearn.svm import LinearSVC
 import matplotlib.cm as cm
 
 # ----------------------------------------------------------------------------------
+#                        MODELS : Réseau de neurones
+# ----------------------------------------------------------------------------------
+import tensorflow as tf
+
+def neural_network_with_categorical(x_train, y_train, x_test=None,  y_test=None, couche_activations=[(100,'sigmoid'), (10, 'softmax')], epochs=5,input_shape=None,dropout = None, verbose=0):
+    nodes = []
+    if input_shape:
+        nodes.append(tf.keras.layers.Flatten(input_shape=input_shape))
+        # tf.keras.layers.Flatten(input_shape=(28,28)),
+    
+    for nb_nodes, acti in couche_activations:
+        nodes.append(tf.keras.layers.Dense(nb_nodes, activation=acti))
+        # tf.keras.layers.Dense(100, activation='sigmoid'),
+        # tf.keras.layers.Dense(10, activation='softmax')
+        if dropout:
+            tf.keras.layers.Dropout(dropout)
+            # tf.keras.layers.Dropout(0.2),
+    
+    model = tf.keras.models.Sequential(nodes)
+    
+    y_categories = tf.keras.utils.to_categorical(y_train, num_classes=np.unique(y_train).shape[0])
+    y_test_categories = tf.keras.utils.to_categorical(y_test, num_classes=np.unique(y_train).shape[0])
+    loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    # loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    # print(loss_fn(y_categories, predictions).numpy())
+    
+    model.compile(optimizer='adam',
+                loss=loss_fn,
+                metrics=['accuracy'])
+    model.fit(x_train, y_categories, epochs=epochs)
+    # model.fit(x_train, y_train, epochs=epochs)
+
+    if x_test is not None and y_test is not None:
+        print(f'\n----------------------------------------------------------------------------')
+        print(f'{model.evaluate(x_test,  y_test_categories, verbose=verbose)} for {len(couche_activations)} couches ==> ', end='')
+        for nb_nodes, acti in couche_activations:
+            print(f'{nb_nodes} nodes on {acti}, ', end='')
+        print(f'\n----------------------------------------------------------------------------')
+        
+    return model
+
+
+# ----------------------------------------------------------------------------------
 #                        MODELS : GridSearchCV
 # ----------------------------------------------------------------------------------
 
@@ -42,8 +85,6 @@ def classifier_knn_grid(X_train, y_train, verbose=False, grid_params=None):
 
     if verbose: print("             DONE")
     return grid
-
-
 
 def display_scores(models_list, X_test, y_test, X_test_pca=None, y_column_name=None):
    for model_name, model_grid in models_list.items():
@@ -607,3 +648,70 @@ def get_color_names():
                     for name, color in colors.items())
     sorted_names = [name for hsv, name in by_hsv]
     return sorted_names
+
+
+def plot_image(i, predictions_array, true_label, img):
+  true_label, img = true_label[i], img[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+
+  plt.imshow(img, cmap=plt.cm.binary)
+
+  predicted_label = np.argmax(predictions_array)
+  if predicted_label == true_label:
+    color = 'blue'
+  else:
+    color = 'red'
+
+  plt.xlabel("{} {:2.0f}% ({})".format(predicted_label,
+                                100*np.max(predictions_array),
+                                true_label),
+                                color=color)
+
+def plot_value_array(i, predictions_array, true_label):
+  true_label = true_label[i]
+  plt.grid(False)
+  plt.xticks(range(10))
+  plt.yticks([])
+  thisplot = plt.bar(range(len(predictions_array)), predictions_array, color="#777777")
+  plt.ylim([0, 1])
+  predicted_label = np.argmax(predictions_array)
+
+  c = 'red'
+  if predicted_label == true_label:
+    c = 'green'
+
+  thisplot[true_label].set_color('blue')
+  thisplot[predicted_label].set_color(c)
+
+def plot_pred(x, y, predictions, range=range(0,1)):
+    for i in range:
+        plt.figure(figsize=(6,3))
+        plt.subplot(1,2,1)
+        plot_image(i, predictions[i], y, x)
+        plt.subplot(1,2,2)
+        plot_value_array(i, predictions[i],  y|i)
+        plt.show()
+
+
+def plot_history(history, loss_name='loss', precision='accuracy', loss_val_name=None, precision_val=None):
+
+    plt.figure(figsize=(18,5))
+    plt.subplot(121)
+    
+    # Fonction de coût : Entropie croisée moyenne
+    plt.plot(history.history[loss_name], c='steelblue', label='train')
+    if loss_val_name is not None:
+        plt.plot(history.history[precision_val], c='coral', label='validation')
+    plt.title('Fonction de coût')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='best', borderaxespad=0.)
+    
+    # Précision
+    plt.subplot(122)
+    plt.plot(history.history[precision], c='steelblue', label='train')
+    if precision_val is not None:
+        plt.plot(history.history[precision_val], c='coral', label='validation')
+    plt.title('Précision')
+    plt.legend(bbox_to_anchor=(1.05, 1),loc='best',  borderaxespad=0.)
+    plt.show()
